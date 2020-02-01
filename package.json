@@ -1,0 +1,35 @@
+{
+  "name": "rx-ts-lua",
+  "version": "0.0.0",
+  "description": "ReactiveX for TypeScriptLua",
+  "main": "index.js",
+  "repository": "https://github.com/LXSMNSYC/rx-ts-lua.git",
+  "author": "Alexis Munsayac <alexis.munsayac@gmail.com>",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "build": "tstl -p ./tsconfig.json",
+    "watch": "tstl -p ./tsconfig.json --watch",
+    "lint": "eslint \"./src/**/*.{ts|tsx}\""
+  },
+  "devDependencies": {
+    "@types/jest": "^25.1.1",
+    "@typescript-eslint/eslint-plugin": "^2.18.0",
+    "@typescript-eslint/parser": "^2.18.0",
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-import-resolver-node": "^0.3.2",
+    "eslint-import-resolver-typescript": "^2.0.0",
+    "eslint-plugin-import": "^2.20.0",
+    "jest": "^25.1.0",
+    "ts-jest": "^25.1.0",
+    "typescript": "^3.7.5",
+    "typescript-to-lua": "^0.31.0"
+  },
+  "dependencies": {},
+  "bugs": {
+    "url": "https://github.com/LXSMNSYC/rx-ts-lua/issues",
+    "email": "alexis.munsayac@gmail.com"
+  },
+  "homepage": "https://github.com/LXSMNSYC/rx-ts-lua"
+}
