@@ -30,8 +30,8 @@ import { ObservableObserver } from '../../types/observers';
 import SafeObservableObserver from '../../observers/observable/safe';
 import EMPTY_SUBSCRIPTION from '../../subscriptions/empty';
 
-class ObservableComplete extends Observable<never> {
-  protected subscribeActual(observer: ObservableObserver<never>): void {
+class ObservableComplete<T> extends Observable<T> {
+  protected subscribeActual(observer: ObservableObserver<T>): void {
     const newObserver = new SafeObservableObserver(observer);
 
     newObserver.onSubscribe(EMPTY_SUBSCRIPTION);
@@ -39,6 +39,6 @@ class ObservableComplete extends Observable<never> {
   }
 }
 
-export default function complete(this: void): Observable<never> {
-  return new ObservableComplete();
+export default function complete<T>(this: void): Observable<T> {
+  return new ObservableComplete<T>();
 }

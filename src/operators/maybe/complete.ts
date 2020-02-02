@@ -30,8 +30,8 @@ import { MaybeObserver } from '../../types/observers';
 import SafeMaybeObserver from '../../observers/maybe/safe';
 import EMPTY_SUBSCRIPTION from '../../subscriptions/empty';
 
-class MaybeComplete extends Maybe<never> {
-  protected subscribeActual(observer: MaybeObserver<never>): void {
+class MaybeComplete<T> extends Maybe<T> {
+  protected subscribeActual(observer: MaybeObserver<T>): void {
     const newObserver = new SafeMaybeObserver(observer);
 
     newObserver.onSubscribe(EMPTY_SUBSCRIPTION);
@@ -39,6 +39,6 @@ class MaybeComplete extends Maybe<never> {
   }
 }
 
-export default function complete(this: void): Maybe<never> {
-  return new MaybeComplete();
+export default function complete<T>(this: void): Maybe<T> {
+  return new MaybeComplete<T>();
 }
