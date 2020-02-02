@@ -28,6 +28,19 @@
 import { CompletableObserver } from './types/observers';
 import SubscriptionCompletableObserver from './observers/completable/subscription';
 import Subscription from './types/subscription';
+import { LuaFunction, LuaAction, LuaConsumer } from './types/utils';
+import LambdaCompletableObserver from './observers/completable/lambda';
+
+function isCompletableObserver(value: any): value is CompletableObserver {
+  return (
+    typeof value === 'object'
+    && typeof value.onSubscribe === 'function'
+    && typeof value.onComplete === 'function'
+    && typeof value.onError === 'function'
+  );
+}
+
+export type CompletableTransformer = LuaFunction<Completable, Completable>;
 
 export default abstract class Completable {
   public compose(transformer: (input: Completable) => Completable): Completable {
@@ -47,9 +60,21 @@ export default abstract class Completable {
     return observer;
   }
 
-  public subscribe(observer: CompletableObserver): Subscription {
-    const subscription = new SubscriptionCompletableObserver(observer);
+  public subscribe(onComplete: LuaAction, onError: LuaConsumer<any>): Subscription;
+
+  public subscribe(onComplete: LuaAction): Subscription;
+
+  public subscribe(observer: CompletableObserver): Subscription;
+
+  public subscribe(): Subscription;
+
+  public subscribe(param1?: any, param2?: any): Subscription {
+    const subscription = isCompletableObserver(param1)
+      ? new SubscriptionCompletableObserver(param1)
+      : new LambdaCompletableObserver(param1, param2);
+
     this.subscribeActual(subscription);
+
     return subscription;
   }
 }

@@ -28,14 +28,28 @@
 import { MaybeObserver } from './types/observers';
 import SubscriptionMaybeObserver from './observers/maybe/subscription';
 import Subscription from './types/subscription';
+import { LuaFunction, LuaConsumer, LuaAction } from './types/utils';
+import LambdaMaybeObserver from './observers/maybe/lambda';
+
+function isMaybeObserver<T>(value: any): value is MaybeObserver<T> {
+  return (
+    typeof value === 'object'
+    && typeof value.onSubscribe === 'function'
+    && typeof value.onComplete === 'function'
+    && typeof value.onError === 'function'
+    && typeof value.onSuccess === 'function'
+  );
+}
+
+export type MaybeTransformer<T, R> = LuaFunction<Maybe<T>, Maybe<R>>;
 
 export default abstract class Maybe<T> {
-  public compose<R>(transformer: (input: Maybe<T>) => Maybe<R>): Maybe<R> {
+  public compose<R>(transformer: MaybeTransformer<T, R>): Maybe<R> {
     return transformer(this);
   }
 
   public pipe<Final>(
-    ...transformers: ((input: Maybe<any>) => Maybe<any>)[]
+    ...transformers: MaybeTransformer<any, any>[]
   ): Maybe<Final> {
     return transformers.reduce((acc, x) => x(acc), this as Maybe<any>) as Maybe<Final>;
   }
@@ -47,9 +61,27 @@ export default abstract class Maybe<T> {
     return observer;
   }
 
-  public subscribe(observer: MaybeObserver<T>): Subscription {
-    const subscription = new SubscriptionMaybeObserver(observer);
+  public subscribe(
+    onSuccess: LuaConsumer<T>,
+    onError: LuaConsumer<any>,
+    onComplete: LuaAction,
+  ): Subscription;
+
+  public subscribe(onSuccess: LuaConsumer<T>, onError: LuaConsumer<any>): Subscription;
+
+  public subscribe(onSuccess: LuaConsumer<T>): Subscription;
+
+  public subscribe(observer: MaybeObserver<T>): Subscription;
+
+  public subscribe(): Subscription;
+
+  public subscribe(param1?: any, param2?: any, param3?: any): Subscription {
+    const subscription = isMaybeObserver(param1)
+      ? new SubscriptionMaybeObserver(param1)
+      : new LambdaMaybeObserver(param1, param2, param3);
+
     this.subscribeActual(subscription);
+
     return subscription;
   }
 }

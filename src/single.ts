@@ -29,8 +29,7 @@ import { SingleObserver } from './types/observers';
 import Subscription from './types/subscription';
 import SubscriptionSingleObserver from './observers/single/subscription';
 import LambdaSingleObserver from './observers/single/lambda';
-import { DEFAULT_THROW, DEFAULT_CONSUMER } from './utils/defaults';
-import { Consumer } from './types/utils';
+import { LuaConsumer, LuaFunction } from './types/utils';
 
 function isSingleObserver<T>(value: any): value is SingleObserver<T> {
   return (
@@ -41,13 +40,15 @@ function isSingleObserver<T>(value: any): value is SingleObserver<T> {
   );
 }
 
+export type SingleTransformer<T, R> = LuaFunction<Single<T>, Single<R>>;
+
 export default abstract class Single<T> {
-  public compose<R>(transformer: (input: Single<T>) => Single<R>): Single<R> {
+  public compose<R>(transformer: SingleTransformer<T, R>): Single<R> {
     return transformer(this);
   }
 
   public pipe<Final>(
-    ...transformers: ((input: Single<any>) => Single<any>)[]
+    ...transformers: SingleTransformer<any, any>[]
   ): Single<Final> {
     return transformers.reduce((acc, x) => x(acc), this as Single<any>) as Single<Final>;
   }
@@ -59,30 +60,18 @@ export default abstract class Single<T> {
     return observer;
   }
 
-  public subscribe(onSuccess: Consumer<T>, onError: Consumer<any>): Subscription;
+  public subscribe(onSuccess: LuaConsumer<T>, onError: LuaConsumer<any>): Subscription;
 
-  public subscribe(onSuccess: Consumer<T>): Subscription;
+  public subscribe(onSuccess: LuaConsumer<T>): Subscription;
 
   public subscribe(observer: SingleObserver<T>): Subscription;
 
   public subscribe(): Subscription;
 
   public subscribe(param1?: any, param2?: any): Subscription {
-    let subscription: SingleObserver<T> & Subscription;
-
-    if (typeof param1 === 'function') {
-      if (typeof param2 === 'function') {
-        subscription = new LambdaSingleObserver(param1, param2);
-      } else {
-        subscription = new LambdaSingleObserver(param1, DEFAULT_THROW);
-      }
-    } else if (isSingleObserver(param1)) {
-      subscription = new SubscriptionSingleObserver(param1);
-    } else if (typeof param2 === 'function') {
-      subscription = new LambdaSingleObserver(DEFAULT_CONSUMER, param2);
-    } else {
-      subscription = new LambdaSingleObserver(DEFAULT_CONSUMER, DEFAULT_THROW);
-    }
+    const subscription = isSingleObserver(param1)
+      ? new SubscriptionSingleObserver(param1)
+      : new LambdaSingleObserver(param1, param2);
 
     this.subscribeActual(subscription);
 
