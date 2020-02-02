@@ -27,6 +27,7 @@
  */
 import { MaybeObserver } from '../../types/observers';
 import Subscription from '../../types/subscription';
+import ProtectedMaybeObserver from './protected';
 
 export default class SubscriptionMaybeObserver<T> implements MaybeObserver<T>, Subscription {
   private subscription?: Subscription;
@@ -36,12 +37,13 @@ export default class SubscriptionMaybeObserver<T> implements MaybeObserver<T>, S
   private upstream: MaybeObserver<T>;
 
   constructor(observer: MaybeObserver<T>) {
-    this.upstream = observer;
+    this.upstream = new ProtectedMaybeObserver(observer);
   }
 
   public onSubscribe(subscription: Subscription): void {
     if (this.alive) {
       this.subscription = subscription;
+      this.upstream.onSubscribe(subscription);
     } else {
       subscription.cancel();
     }
@@ -51,8 +53,9 @@ export default class SubscriptionMaybeObserver<T> implements MaybeObserver<T>, S
     if (this.alive) {
       try {
         this.upstream.onComplete();
-      } finally {
+      } catch (err) {
         this.cancel();
+        throw err;
       }
     }
   }
@@ -61,8 +64,9 @@ export default class SubscriptionMaybeObserver<T> implements MaybeObserver<T>, S
     if (this.alive) {
       try {
         this.upstream.onSuccess(value);
-      } finally {
+      } catch (err) {
         this.cancel();
+        throw err;
       }
     }
   }
@@ -71,9 +75,12 @@ export default class SubscriptionMaybeObserver<T> implements MaybeObserver<T>, S
     if (this.alive) {
       try {
         this.upstream.onError(error);
-      } finally {
+      } catch (err) {
         this.cancel();
+        throw err;
       }
+    } else {
+      throw error;
     }
   }
 

@@ -27,6 +27,7 @@
  */
 import { CompletableObserver } from '../../types/observers';
 import Subscription from '../../types/subscription';
+import ProtectedCompletableObserver from './protected';
 
 export default class SubscriptionCompletableObserver
 implements CompletableObserver, Subscription {
@@ -37,12 +38,13 @@ implements CompletableObserver, Subscription {
   private upstream: CompletableObserver;
 
   constructor(observer: CompletableObserver) {
-    this.upstream = observer;
+    this.upstream = new ProtectedCompletableObserver(observer);
   }
 
   public onSubscribe(subscription: Subscription): void {
     if (this.alive) {
       this.subscription = subscription;
+      this.upstream.onSubscribe(subscription);
     } else {
       subscription.cancel();
     }
@@ -52,8 +54,9 @@ implements CompletableObserver, Subscription {
     if (this.alive) {
       try {
         this.upstream.onComplete();
-      } finally {
+      } catch (err) {
         this.cancel();
+        throw err;
       }
     }
   }
@@ -62,9 +65,12 @@ implements CompletableObserver, Subscription {
     if (this.alive) {
       try {
         this.upstream.onError(error);
-      } finally {
+      } catch (err) {
         this.cancel();
+        throw err;
       }
+    } else {
+      throw error;
     }
   }
 

@@ -27,6 +27,7 @@
  */
 import { ObservableObserver } from '../../types/observers';
 import Subscription from '../../types/subscription';
+import ProtectedObservableObserver from './protected';
 
 export default class SubscriptionObservableObserver<T>
 implements ObservableObserver<T>, Subscription {
@@ -37,12 +38,13 @@ implements ObservableObserver<T>, Subscription {
   private upstream: ObservableObserver<T>;
 
   constructor(observer: ObservableObserver<T>) {
-    this.upstream = observer;
+    this.upstream = new ProtectedObservableObserver(observer);
   }
 
   public onSubscribe(subscription: Subscription): void {
     if (this.alive) {
       this.subscription = subscription;
+      this.upstream.onSubscribe(subscription);
     } else {
       subscription.cancel();
     }
@@ -52,8 +54,9 @@ implements ObservableObserver<T>, Subscription {
     if (this.alive) {
       try {
         this.upstream.onComplete();
-      } finally {
+      } catch (err) {
         this.cancel();
+        throw err;
       }
     }
   }
@@ -62,9 +65,12 @@ implements ObservableObserver<T>, Subscription {
     if (this.alive) {
       try {
         this.upstream.onError(error);
-      } finally {
+      } catch (err) {
         this.cancel();
+        throw err;
       }
+    } else {
+      throw error;
     }
   }
 
@@ -73,9 +79,7 @@ implements ObservableObserver<T>, Subscription {
       try {
         this.upstream.onNext(value);
       } catch (error) {
-        this.upstream.onError(error);
-      } finally {
-        this.cancel();
+        this.onError(error);
       }
     }
   }
