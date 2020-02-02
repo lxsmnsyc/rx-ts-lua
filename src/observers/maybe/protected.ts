@@ -61,6 +61,8 @@ export default class ProtectedMaybeObserver<T> implements MaybeObserver<T> {
   public onError(error: any): void {
     if (this.subscribed) {
       this.upstream.onError(error);
+    } else {
+      throw error;
     }
   }
 }

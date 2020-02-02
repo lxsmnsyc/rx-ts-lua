@@ -55,6 +55,8 @@ export default class ProtectedCompletableObserver implements CompletableObserver
   public onError(error: any): void {
     if (this.subscribed) {
       this.upstream.onError(error);
+    } else {
+      throw error;
     }
   }
 }

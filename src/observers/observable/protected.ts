@@ -55,6 +55,8 @@ export default class ProtectedObservableObserver<T> implements ObservableObserve
   public onError(error: any): void {
     if (this.subscribed) {
       this.upstream.onError(error);
+    } else {
+      throw error;
     }
   }
 

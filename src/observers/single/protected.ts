@@ -55,6 +55,8 @@ export default class ProtectedSingleObserver<T> implements SingleObserver<T> {
   public onError(error: any): void {
     if (this.subscribed) {
       this.upstream.onError(error);
+    } else {
+      throw error;
     }
   }
 }
