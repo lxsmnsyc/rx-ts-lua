@@ -2,7 +2,7 @@
   "include": ["src", "types", "test"],
   "compilerOptions": {
     "outDir": "build",
-    "target": "es5",
+    "target": "es6",
     "module": "esnext",
     "lib": ["dom", "esnext"],
     "importHelpers": true,
