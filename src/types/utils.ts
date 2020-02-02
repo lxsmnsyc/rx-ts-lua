@@ -30,4 +30,10 @@ export interface LivingObject {
   alive: boolean;
 }
 
-export type Consumer<T> = (this: void, value: T) => void;
+export type LuaConsumer<T> = (this: void, value: T) => void;
+export type LuaConsumer2<A, B> = (this: void, a: A, b: B) => void;
+
+export type LuaFunction<T, R> = (this: void, value: T) => R;
+export type LuaFunction2<A, B, R> = (this: void, a: A, b: B) => R;
+
+export type LuaAction = (this: void) => void;
