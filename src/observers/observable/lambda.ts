@@ -25,26 +25,30 @@
  * @author Alexis Munsayac <alexis.munsayac@gmail.com>
  * @copyright Alexis Munsayac 2020
  */
-import { SingleObserver } from '../../types/observers';
+import { ObservableObserver } from '../../types/observers';
 import Subscription from '../../types/subscription';
-import { LuaConsumer } from '../../types/utils';
+import { LuaConsumer, LuaAction } from '../../types/utils';
 import { DEFAULT_CONSUMER, DEFAULT_THROW } from '../../utils/defaults';
 
-export default class LambdaSingleObserver<T> implements SingleObserver<T>, Subscription {
+export default class LambdaObservableObserver<T> implements ObservableObserver<T>, Subscription {
   private subscription?: Subscription;
 
   private alive = true;
 
-  private resolve: LuaConsumer<T>;
+  private complete: LuaAction;
 
-  private reject: LuaConsumer<any>;
+  private next: LuaConsumer<T>;
+
+  private err: LuaConsumer<any>;
 
   constructor(
-    onSuccess: LuaConsumer<T> = DEFAULT_CONSUMER,
+    onNext: LuaConsumer<T> = DEFAULT_CONSUMER,
     onError: LuaConsumer<any> = DEFAULT_THROW,
+    onComplete: LuaAction = DEFAULT_CONSUMER,
   ) {
-    this.resolve = onSuccess;
-    this.reject = onError;
+    this.complete = onComplete;
+    this.err = onError;
+    this.next = onNext;
   }
 
   public onSubscribe(subscription: Subscription): void {
@@ -55,13 +59,12 @@ export default class LambdaSingleObserver<T> implements SingleObserver<T>, Subsc
     }
   }
 
-  public onSuccess(value: T): void {
+  public onComplete(): void {
     if (this.alive) {
       try {
-        this.resolve(value);
-      } catch (err) {
+        this.complete();
+      } finally {
         this.cancel();
-        throw err;
       }
     }
   }
@@ -69,13 +72,23 @@ export default class LambdaSingleObserver<T> implements SingleObserver<T>, Subsc
   public onError(error: any): void {
     if (this.alive) {
       try {
-        this.reject(error);
+        this.err(error);
       } catch (err) {
         this.cancel();
         throw err;
       }
     } else {
       throw error;
+    }
+  }
+
+  public onNext(value: T): void {
+    if (this.alive) {
+      try {
+        this.next(value);
+      } catch (error) {
+        this.onError(error);
+      }
     }
   }
 
