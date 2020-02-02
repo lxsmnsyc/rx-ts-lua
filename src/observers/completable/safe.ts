@@ -29,6 +29,7 @@ import { CompletableObserver } from '../../types/observers';
 import Subscription from '../../types/subscription';
 import { LivingObject } from '../../types/utils';
 import LivingSubscription from '../../subscriptions/living';
+import ProtectedCompletableObserver from './protected';
 
 export default class SafeCompletableObserver implements CompletableObserver, LivingObject {
   private subscription?: Subscription;
@@ -38,12 +39,13 @@ export default class SafeCompletableObserver implements CompletableObserver, Liv
   private upstream: CompletableObserver;
 
   constructor(observer: CompletableObserver) {
-    this.upstream = observer;
+    this.upstream = new ProtectedCompletableObserver(observer);
   }
 
   public onSubscribe(subscription: Subscription): void {
     if (this.alive) {
       this.subscription = new LivingSubscription(this, subscription);
+      this.upstream.onSubscribe(this.subscription);
     } else {
       subscription.cancel();
     }
@@ -53,8 +55,9 @@ export default class SafeCompletableObserver implements CompletableObserver, Liv
     if (this.alive) {
       try {
         this.upstream.onComplete();
-      } finally {
+      } catch (err) {
         this.cancel();
+        throw err;
       }
     }
   }
@@ -63,9 +66,12 @@ export default class SafeCompletableObserver implements CompletableObserver, Liv
     if (this.alive) {
       try {
         this.upstream.onError(error);
-      } finally {
+      } catch (err) {
         this.cancel();
+        throw err;
       }
+    } else {
+      throw error;
     }
   }
 

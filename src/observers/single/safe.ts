@@ -29,6 +29,7 @@ import { SingleObserver } from '../../types/observers';
 import Subscription from '../../types/subscription';
 import { LivingObject } from '../../types/utils';
 import LivingSubscription from '../../subscriptions/living';
+import ProtectedSingleObserver from './protected';
 
 export default class SafeSingleObserver<T> implements SingleObserver<T>, LivingObject {
   private subscription?: Subscription;
@@ -38,12 +39,13 @@ export default class SafeSingleObserver<T> implements SingleObserver<T>, LivingO
   private upstream: SingleObserver<T>;
 
   constructor(observer: SingleObserver<T>) {
-    this.upstream = observer;
+    this.upstream = new ProtectedSingleObserver(observer);
   }
 
   public onSubscribe(subscription: Subscription): void {
     if (this.alive) {
       this.subscription = new LivingSubscription(this, subscription);
+      this.upstream.onSubscribe(this.subscription);
     } else {
       subscription.cancel();
     }
@@ -53,8 +55,9 @@ export default class SafeSingleObserver<T> implements SingleObserver<T>, LivingO
     if (this.alive) {
       try {
         this.upstream.onSuccess(value);
-      } finally {
+      } catch (err) {
         this.cancel();
+        throw err;
       }
     }
   }
@@ -63,9 +66,12 @@ export default class SafeSingleObserver<T> implements SingleObserver<T>, LivingO
     if (this.alive) {
       try {
         this.upstream.onError(error);
-      } finally {
+      } catch (err) {
         this.cancel();
+        throw err;
       }
+    } else {
+      throw error;
     }
   }
 

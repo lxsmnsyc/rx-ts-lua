@@ -29,6 +29,7 @@ import { ObservableObserver } from '../../types/observers';
 import Subscription from '../../types/subscription';
 import { LivingObject } from '../../types/utils';
 import LivingSubscription from '../../subscriptions/living';
+import ProtectedObservableObserver from './protected';
 
 export default class SafeObservableObserver<T> implements ObservableObserver<T>, LivingObject {
   private subscription?: Subscription;
@@ -38,12 +39,13 @@ export default class SafeObservableObserver<T> implements ObservableObserver<T>,
   private upstream: ObservableObserver<T>;
 
   constructor(observer: ObservableObserver<T>) {
-    this.upstream = observer;
+    this.upstream = new ProtectedObservableObserver(observer);
   }
 
   public onSubscribe(subscription: Subscription): void {
     if (this.alive) {
       this.subscription = new LivingSubscription(this, subscription);
+      this.upstream.onSubscribe(this.subscription);
     } else {
       subscription.cancel();
     }
@@ -53,8 +55,9 @@ export default class SafeObservableObserver<T> implements ObservableObserver<T>,
     if (this.alive) {
       try {
         this.upstream.onComplete();
-      } finally {
+      } catch (err) {
         this.cancel();
+        throw err;
       }
     }
   }
@@ -63,9 +66,12 @@ export default class SafeObservableObserver<T> implements ObservableObserver<T>,
     if (this.alive) {
       try {
         this.upstream.onError(error);
-      } finally {
+      } catch (err) {
         this.cancel();
+        throw err;
       }
+    } else {
+      throw error;
     }
   }
 
@@ -74,9 +80,7 @@ export default class SafeObservableObserver<T> implements ObservableObserver<T>,
       try {
         this.upstream.onNext(value);
       } catch (error) {
-        this.upstream.onError(error);
-      } finally {
-        this.cancel();
+        this.onError(error);
       }
     }
   }
