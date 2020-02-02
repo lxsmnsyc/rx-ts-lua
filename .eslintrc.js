@@ -47,5 +47,6 @@ module.exports = {
       ],
       "import/no-unresolved": "error",
       "class-methods-use-this": "off",
+      "max-classes-per-file": "off",
     },
 };
