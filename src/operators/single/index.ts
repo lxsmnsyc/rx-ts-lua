@@ -25,8 +25,14 @@
  * @author Alexis Munsayac <alexis.munsayac@gmail.com>
  * @copyright Alexis Munsayac 2020
  */
+import error from './error';
 import just from './just';
+import map from './map';
+import never from './never';
 
 export default {
+  error,
   just,
+  map,
+  never,
 };
