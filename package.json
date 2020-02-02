@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tstl -p ./tsconfig.json",
     "watch": "tstl -p ./tsconfig.json --watch",
-    "lint": "eslint \"./src/**/*.{ts|tsx}\""
+    "lint": "eslint \"src/**/*.ts\""
   },
   "devDependencies": {
     "@types/jest": "^25.1.1",
